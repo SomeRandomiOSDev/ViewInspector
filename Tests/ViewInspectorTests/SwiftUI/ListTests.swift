@@ -141,4 +141,18 @@ final class GlobalModifiersForList: XCTestCase {
         let sut = EmptyView().listStyle(DefaultListStyle())
         XCTAssertTrue(try sut.inspect().listStyle() is DefaultListStyle)
     }
+
+    #if os(iOS)
+    func testListRowSeparatorTint() throws {
+        guard #available(iOS 15.0, *) else { return }
+        let sut = EmptyView().listRowSeparatorTint(.red)
+        XCTAssertEqual(try sut.inspect().listRowSeparatorTint(), .red)
+    }
+
+    func testListSectionSeparatorTint() throws {
+        guard #available(iOS 15.0, *) else { return }
+        let sut = EmptyView().listSectionSeparatorTint(.red)
+        XCTAssertEqual(try sut.inspect().listSectionSeparatorTint(), .red)
+    }
+    #endif // #if os(iOS)
 }

@@ -71,6 +71,36 @@ public extension InspectableView {
         }, call: "listStyle")
         return try Inspector.attribute(path: "modifier|style", value: modifier)
     }
+
+    #if os(iOS)
+    func listRowSeparatorTint() throws -> Color {
+        guard #available(iOS 15.0, *) else {
+            throw InspectionError.modifierNotFound(
+                parent: Inspector.typeName(value: contentForModifierLookup.view), modifier: "listRowSeparatorTint", index: 0)
+        }
+
+        let reference = List {
+            EmptyView()
+            EmptyView()
+        }.listRowSeparatorTint(.red)
+
+        let transform = try modifierAttribute(
+            modifierName: "TraitTransformerModifier<RowKey>",
+            path: "modifier|transform", type: Any.self, call: "listRowSeparatorTint")
+        print(String(reflecting: transform))
+
+        return Color.red
+    }
+
+    func listSectionSeparatorTint() throws -> Color {
+        let transform = try modifierAttribute(
+            modifierName: "TraitTransformerModifier<SectionKey>",
+            path: "modifier|transform", type: Any.self, call: "listSectionSeparatorTint")
+        print(String(reflecting: transform))
+
+        return Color.red
+    }
+    #endif // #if os(iOS)
 }
 
 @available(iOS 13.0, macOS 10.15, tvOS 13.0, *)
