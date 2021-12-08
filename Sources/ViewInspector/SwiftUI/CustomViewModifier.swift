@@ -71,7 +71,16 @@ internal extension Content {
             if let value = try? modifier.value(),
                let object = try? Inspector.attribute(label: "some", value: value, type: AnyObject.self),
                !(object is NSObject) {
-                medium = self.medium.appending(environmentObject: object)
+                if let keyPath = try? modifier.keyPath() as? PartialKeyPath<EnvironmentValues>,
+                   let envObjKeyPath = environmentObjectKeyPath(for: object) {
+                    if keyPath == envObjKeyPath {
+                        medium = self.medium.appending(environmentObject: object)
+                    } else {
+                        medium = self.medium.appending(environmentModifier: modifier)
+                    }
+                } else {
+                    medium = self.medium.appending(environmentObject: object)
+                }
             } else {
                 medium = self.medium.appending(environmentModifier: modifier)
             }
@@ -112,6 +121,26 @@ internal extension Content {
         return medium.viewModifiers.reversed().compactMap({ modifier in
             try? Inspector.attribute(label: "modifier", value: modifier, type: Inspectable.self)
         })
+    }
+
+    //
+
+    private func environmentObjectKeyPath(for object: AnyObject) -> PartialKeyPath<EnvironmentValues>? {
+        struct Static {
+            static var keyPathGetter: (@convention(c) (AnyObject, UnsafeRawPointer) -> AnyObject)? {
+                if let swiftUIReference = dlopen("@rpath/SwiftUI.framework/SwiftUI", RTLD_LAZY),
+                   let symbolReference = dlsym(swiftUIReference, "$s7Combine16ObservableObjectP7SwiftUIE16environmentStores15WritableKeyPathCyAD17EnvironmentValuesVxSgGvgZ") {
+                    return unsafeBitCast(symbolReference, to: (@convention(c) (AnyObject, UnsafeRawPointer) -> AnyObject).self)
+                } else {
+                    return nil
+                }
+            }
+        }
+
+        var type: AnyObject.Type = type(of: object)
+        let pointer = UnsafeRawPointer(&type)
+
+        return Static.keyPathGetter?(object, pointer) as? PartialKeyPath<EnvironmentValues>
     }
 }
 
